@@ -1,56 +1,34 @@
 # - Libraries
 import datetime
-from pathlib import Path
 import tkinter as tk
-from tkinter import ttk
-from customtkinter import *
-from CTkMenuBar import *
-
-# - Directory and File Management
-homeDir = Path.home()
-documentsDir = homeDir / "Documents"
-programDir = documentsDir / "Digital Transmissions Log"
-programDir.mkdir(parents=True, exist_ok=True)
-stationsFile = programDir / "stations.txt"
-netsFile = programDir / "nets.txt"
-operatorsFile = programDir / "operators.txt"
-logsFile = programDir / "logs.txt"
+import dtl
+from dtl import file_handler as fh
+import customtkinter as ctk
+import CTkMenuBar as ctkMenu
+from PIL import Image
 
 initialStationsList = ["Kilo","Lima","Mike","November"]
 initialNetsList = ["CMD1","CMD2","CMD3"]
 initialOperatorsList = ["LCpl Schmuckatelli","PFC Devil Dog", "SSgt Pena"]
-initialLogsList = ["2025/Oct/21<|>00:19:56<|>SSgt Pena<|>CMD1<|>Operator<|>User<|>This is an example output for you."]
+initialLogsList = ["2025/Oct/21⟺00:19:56⟺SSgt Pena⟺CMD1⟺Operator⟺User⟺This is an example output for you."]
 
-def appendList(path: Path) -> list[str]:
-    return path.read_text().splitlines()
-
-def writeInitialList(path: Path, initial_list: list) -> None:
-    with path.open("x") as file:
-        for value in initial_list:
-            file.write(f"{value}\n")
-
-def initializeFile(path: Path, initial_list: list) -> list[str]:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    try:
-        writeInitialList(path, initial_list)
-    except FileExistsError:
-        if path.stat().st_size == 0:
-            writeInitialList(path, initial_list)
-    return appendList(path)
-
-stationsList = initializeFile(stationsFile, initialStationsList)
-netsList = initializeFile(netsFile, initialNetsList)
-operatorsList = initializeFile(operatorsFile, initialOperatorsList)
-logsList = initializeFile(logsFile, initialLogsList)
+stationsList = fh.initializeFile(fh.stationsFile, initialStationsList)
+fh.fileDictionary["stations"]["list"] = stationsList
+netsList = fh.initializeFile(fh.netsFile, initialNetsList)
+fh.fileDictionary["nets"]["list"] = netsList
+operatorsList = fh.initializeFile(fh.operatorsFile, initialOperatorsList)
+fh.fileDictionary["operators"]["list"] = operatorsList
+logsList = fh.initializeFile(fh.logsFile, initialLogsList)
 
 # - Main UI
-UI = CTk()
+UI = ctk.CTk()
 UI.title("Digital Transmissions Log")
+UI.iconbitmap(fh.resourcePath("dtl/appicon.ico"))
 UI.geometry("800x600")
 UI.minsize(800, 600)
 UI.focus_force()
-set_default_color_theme("green")
-set_appearance_mode("dark")
+ctk.set_default_color_theme("green")
+ctk.set_appearance_mode("dark")
 
 # - Menu Bar -> Functions
 def onMainClicked() -> None:
@@ -78,27 +56,27 @@ def onAboutClicked() -> None:
         aboutFrame.pack(side="top", fill="both", expand=True)
 
 # - Menu Bar -> UI Elements
-menuBar = CTkMenuBar(UI, bg_color = "#1e1f22", height=30, padx=20)
+menuBar = ctkMenu.CTkMenuBar(UI, bg_color = "#1e1f22", height=30, padx=20)
 menuBar.add_cascade(text="Transmissions Log", postcommand=onMainClicked)
 menuBar.add_cascade(text="Settings", postcommand=onSettingsClicked)
 menuBar.add_cascade(text="About", postcommand=onAboutClicked)
 
 # - Main Frame
-mainFrame = CTkFrame(UI)
+mainFrame = ctk.CTkFrame(UI)
 mainFrame.pack(side="top", fill="both", expand=True)
 mainFrame.rowconfigure(0, weight=3, uniform="rows") #Row for topFrame
 mainFrame.rowconfigure(1, weight=4, uniform="rows") #Row for bottomFrame
 mainFrame.columnconfigure(0, weight=1)
 
 # - Top Frame
-topFrame = CTkFrame(mainFrame, corner_radius=0)
+topFrame = ctk.CTkFrame(mainFrame, corner_radius=0)
 topFrame.grid(row=0, column=0, sticky="nsew")
 topFrame.grid_columnconfigure(0, weight=4)
 topFrame.grid_columnconfigure(1, weight=6)
 topFrame.grid_rowconfigure(0, weight=1)
 
 # - Top Frame Left
-topFrameLeft = CTkFrame(topFrame, corner_radius=0)
+topFrameLeft = ctk.CTkFrame(topFrame, corner_radius=0)
 topFrameLeft.grid(row=0, column=0, sticky='nsew')
 topFrameLeft.grid_columnconfigure(0, weight=0)
 topFrameLeft.grid_columnconfigure(1, weight=1, uniform="fields")
@@ -106,31 +84,35 @@ topFrameLeft.grid_columnconfigure(2, weight=0)
 topFrameLeft.grid_columnconfigure(3, weight=1, uniform="fields")
 
 #  - From Label and Selection
-CTkLabel(topFrameLeft, text="From -").grid(row=0, column=0, padx=6, pady=8, sticky="w")
-fromSelection = CTkComboBox(topFrameLeft, values=stationsList, state="readonly")
+ctk.CTkLabel(topFrameLeft, text="From -").grid(row=0, column=0, padx=6, pady=8, sticky="w")
+fromSelection = ctk.CTkComboBox(topFrameLeft, values=stationsList, state="readonly")
 fromSelection.set(stationsList[0])
+fh.fileDictionary["stations"]["combobox"] = fromSelection
 fromSelection.grid(row=0, column=1, padx=10, pady=8, sticky="ew")
 
 # - To Label and Selection
-CTkLabel(topFrameLeft, text="To -").grid(row=0, column=2, padx=6, pady=8, sticky="w")
-toSelection = CTkComboBox(topFrameLeft, values=stationsList, state="readonly")
+ctk.CTkLabel(topFrameLeft, text="To -").grid(row=0, column=2, padx=6, pady=8, sticky="w")
+toSelection = ctk.CTkComboBox(topFrameLeft, values=stationsList, state="readonly")
 toSelection.set(stationsList[0])
+fh.fileDictionary["stations"]["combobox1"] = toSelection
 toSelection.grid(row=0, column=3, padx=10, pady=8, sticky="ew")
 
 # - Net Label and Selection
-CTkLabel(topFrameLeft, text="Net -").grid(row=1, column=0, padx=6, pady=8, sticky="w")
-netSelection = CTkComboBox(topFrameLeft, values=netsList, state="readonly")
+ctk.CTkLabel(topFrameLeft, text="Net -").grid(row=1, column=0, padx=6, pady=8, sticky="w")
+netSelection = ctk.CTkComboBox(topFrameLeft, values=netsList, state="readonly")
+fh.fileDictionary["nets"]["combobox"] = netSelection
 netSelection.set(netsList[0])
 netSelection.grid(row=1, column=1, padx=10, pady=8, sticky="ew")
 
 # - Operator Label and Selection
-CTkLabel(topFrameLeft, text="Operator -").grid(row=1, column=2, padx=6, pady=8, sticky="w")
-operatorSelection = CTkComboBox(topFrameLeft, values=operatorsList, state="readonly")
+ctk.CTkLabel(topFrameLeft, text="Operator -").grid(row=1, column=2, padx=6, pady=8, sticky="w")
+operatorSelection = ctk.CTkComboBox(topFrameLeft, values=operatorsList, state="readonly")
+fh.fileDictionary["operators"]["combobox"] = operatorSelection
 operatorSelection.set(operatorsList[0])
 operatorSelection.grid(row=1, column=3, padx=10, pady=8, sticky="ew")
 
 # - Top Frame Right
-topFrameRight = CTkFrame(topFrame, corner_radius=0)
+topFrameRight = ctk.CTkFrame(topFrame, corner_radius=0)
 topFrameRight.grid(row=0, column=1, sticky='nsew')
 topFrameRight.grid_columnconfigure(0, weight=1)
 topFrameRight.grid_columnconfigure(1, weight=0)
@@ -138,49 +120,63 @@ topFrameRight.grid_columnconfigure(2, weight=0)
 topFrameRight.grid_rowconfigure(0, weight=1)
 
 # - Remarks Label and Input
-CTkLabel(topFrameRight, text="Remarks -").grid(row=1, column=1, padx=6, pady=8, sticky="e")
+ctk.CTkLabel(topFrameRight, text="Remarks -").grid(row=1, column=1, padx=6, pady=8, sticky="e")
 placeholderText = "Type remarks here..."
-remarkInput = CTkTextbox(topFrameRight, text_color="grey")
+remarkInput = ctk.CTkTextbox(topFrameRight, text_color="grey")
 remarkInput.grid(row=0, column=0, columnspan=3, padx=6, pady=6, sticky="nsew")
-remarkInput.insert(INSERT, placeholderText)
-
-def onInputFocus(_) -> None:
-    currentText = remarkInput.get("1.0", "end").strip()
-    if currentText == placeholderText:
-        remarkInput.delete("1.0", END)
-        remarkInput.configure(text_color="white")
-remarkInput.bind("<FocusIn>", onInputFocus)
+remarkInput.insert(ctk.INSERT, placeholderText)
+remarkInput.bind("<FocusIn>", lambda event: dtl.onInputFocusIn(event, placeholderText))
+remarkInput.bind("<FocusOut>", lambda event: dtl.onInputFocusOut(event, placeholderText))
 
 # - Preset Selection
-CTkLabel(topFrameLeft, text="Presets -").grid(row=2, column=0, columnspan=2, padx=6, pady=8, sticky="w")
-preset1Button = CTkButton(topFrameLeft, text="9-Line", command=None)
+ctk.CTkLabel(topFrameLeft, text="Presets -").grid(row=2, column=0, columnspan=2, padx=6, pady=8, sticky="w")
+def setPresetText(value, header_text):
+    if not value == False:
+        currentFrom = fromSelection.get()
+        outputString = f"{currentFrom} {header_text}\n"
+        for text in value:
+            outputString += f"{text}\n"
+            remarkInput.delete("1.0", "end")
+            remarkInput.insert(ctk.INSERT, outputString)
+            remarkInput.configure(text_color="white")
+            remarkInput.focus_force()
+
+def open9LineWindow():
+    dlg = dtl.NineLineWindow(UI)
+    value = dlg.show()  # blocks here until the dialog is closed
+    setPresetText(value, "called the following 9-Line:")
+
+def openZMISTWindow():
+    dlg = dtl.ZMISTWindow(UI)
+    value = dlg.show()  # blocks here until the dialog is closed
+    setPresetText(value, "called the following Z-MIST:")
+
+preset1Button = ctk.CTkButton(topFrameLeft, text="9-Line", command=open9LineWindow)
 preset1Button.grid(row=3, column=0, columnspan=2, padx=6, pady=8, sticky="w")
-preset1Button = CTkButton(topFrameLeft, text="Submit", command=None)
-preset1Button.grid(row=4, column=0, columnspan=2, padx=6, pady=8, sticky="w")
+
+preset2Button = ctk.CTkButton(topFrameLeft, text="Z-MIST", command=openZMISTWindow)
+preset2Button.grid(row=4, column=0, columnspan=2, padx=6, pady=8, sticky="w")
 
 # - Bottom Frame
-bottomFrame = CTkFrame(mainFrame, corner_radius=0)
+bottomFrame = ctk.CTkFrame(mainFrame, corner_radius=0)
 bottomFrame.grid(row=1, column=0, sticky="nsew")
 bottomFrame.grid_columnconfigure(0, weight=1)
 bottomFrame.grid_columnconfigure(1, weight=0, minsize=16)
 bottomFrame.grid_rowconfigure(1, weight=1)
 
 # - Bottom Frame Top
-bottomFrameTop = CTkFrame(bottomFrame, corner_radius=0)
+bottomFrameTop = ctk.CTkFrame(bottomFrame, corner_radius=0)
 bottomFrameTop.grid(row=0, column=0, sticky="ew")
 
 # - Bottom Frame Bottom
-style = ttk.Style()
-style.theme_use("alt")
-style.configure("TScrollbar", background="#1e1f22", troughcolor="#2b2b2b")
 canvas = tk.Canvas(bottomFrame, highlightthickness=0, bg="#1e1f22")
-scrollBar = ttk.Scrollbar(bottomFrame, orient="vertical", command=canvas.yview)
+scrollBar = ctk.CTkScrollbar(bottomFrame, command=canvas.yview, bg_color="#2b2b2b")
+canvas.grid(row=0, column=1, sticky="nsew")
 canvas.configure(yscrollcommand=scrollBar.set)
 canvas.grid(row=1, column=0, sticky="nsew")
 scrollBar.grid(row=0, column=1, rowspan=2, sticky="ns")
-scrollBar.configure(style="TScrollbar")
 
-bottomFrameContent = CTkFrame(canvas, corner_radius=0)
+bottomFrameContent = ctk.CTkFrame(canvas, corner_radius=0)
 window_id = canvas.create_window((0, 0), window=bottomFrameContent, anchor="nw")
 
 COLUMN_TEXT = ["Date", "Time", "Operator", "Net", "From", "To", "Remark"]
@@ -237,29 +233,48 @@ def clearContent():
     bottomFrameContent.update_idletasks()
     syncScrollRegion()
 
+def copyToClipboard(text):
+    UI.clipboard_clear()
+    UI.clipboard_append(text)
+    UI.update()
+
+rightClickMenu = tk.Menu(UI, tearoff=False, font=("Roboto", 14), foreground="white", activebackground="#2fa572", background="#1e1f22")
+rightClickMenu.add_command(label="Copy")
+
+def rightClickLog(event,text):
+    rightClickMenu.entryconfigure(0, command=lambda: copyToClipboard(text))
+    try:
+        rightClickMenu.tk_popup(event.x_root, event.y_root)
+    finally:
+        rightClickMenu.grab_release()
+
 cellLabelOptions = dict(anchor="nw", justify="left", bd=1, relief="solid", fg="white", font=("Roboto", 14))
 def getCurrentLog():
     clearContent()
-    with (open(logsFile, "r", encoding="utf-8") as file):
+    with (open(fh.logsFile, "r", encoding="utf-8") as file):
         lines = file.readlines()
         lines.reverse()
         for rowNumber, line in enumerate(lines):
-            lineParts = [p.strip() for p in line.split("<|>")]
+            lineParts = [p.strip() for p in line.split(fh.COLUMN_SEPARATOR)]
             bgColor = "#3b3b3b" if rowNumber % 2 == 0 else "#2b2b2b"
             for columnNumber, part in enumerate(lineParts):
                 if columnNumber == 6:
-                    part = part.replace("<||>", "\n")
+                    part = part.replace(fh.BODY_SEPARATOR, "\n")
+                elif columnNumber == 7:
+                    break
                 label = tk.Label(bottomFrameContent, text=part, bg=bgColor, **cellLabelOptions)
                 label.grid(row=rowNumber, column=columnNumber, sticky="nsew")
                 label.columnIndex = columnNumber
                 cells.append(label)
+                if columnNumber == 6:
+                    label.bind("<Button-3>",lambda event, current_text=part: rightClickLog(event, current_text))
     bottomFrameContent.update_idletasks()
     syncScrollRegion()
 getCurrentLog()
 
 def onSubmitClicked() -> None:
-    currentText = remarkInput.get("1.0", END).strip()
-    currentText = currentText.replace("\n", "<||>")
+    currentText = remarkInput.get("1.0", "end").strip()
+    currentText = currentText.replace("\n", fh.BODY_SEPARATOR)
     if currentText == "" or currentText == placeholderText:
         return
     else:
@@ -270,23 +285,102 @@ def onSubmitClicked() -> None:
         currentNet = netSelection.get()
         currentFrom = fromSelection.get()
         currentTo = toSelection.get()
-        outputString = "<|>".join(
+        outputString = fh.COLUMN_SEPARATOR.join(
             [currentDate, currentTime, currentOperator, currentNet, currentFrom, currentTo, currentText]
         )
-        with logsFile.open("a") as file:
+        with fh.logsFile.open("a", encoding="utf-8") as file:
             print(outputString, file=file)
-        remarkInput.delete("1.0", END)
+        remarkInput.delete("1.0", "end")
         remarkInput.configure(text_color="grey")
-        remarkInput.insert(INSERT, placeholderText)
+        remarkInput.insert("1.0", placeholderText)
         mainFrame.focus_set()
         getCurrentLog()
 
-submitButton = CTkButton(topFrameRight, text="Submit", command=onSubmitClicked)
+submitButton = ctk.CTkButton(topFrameRight, text="Submit", command=onSubmitClicked)
 submitButton.grid(row=1, column=2, padx=6, pady=8, sticky="e")
 
 # - Settings Frame
-settingsFrame = CTkFrame(master=UI)
+settingsFrame = ctk.CTkFrame(master=UI)
+settingsFrame.grid_columnconfigure(0, weight=1)
+settingsFrame.grid_columnconfigure(1, weight=1)
+settingsFrame.grid_columnconfigure(2, weight=1)
+addIcon = ctk.CTkImage(dark_image=Image.open(fh.resourcePath("dtl/add.png")))
+trashIcon = ctk.CTkImage(dark_image=Image.open(fh.resourcePath("dtl/trash.png")))
+
+def addToList(section):
+    dialog = ctk.CTkInputDialog(text=f"Enter your custom {section} entry:", title="Input Dialog")
+    dialog.iconbitmap(fh.resourcePath("dtl/appicon.ico"))
+    dialog.title(f"{section.title()} Entry")
+    user_input = dialog.get_input()
+    if user_input:
+        user_input.strip()
+        frameAdd(section, user_input)
+        section_list = fh.fileDictionary[section]["list"]
+        section_list.append(user_input)
+        fh.fileDictionary[section]["combobox"].configure(values=section_list)
+        if section == "stations":
+            fh.fileDictionary[section]["combobox1"].configure(values=section_list)
+        with fh.fileDictionary[section]["file"].open("a", encoding="utf-8") as file:
+            print(user_input, file=file)
+
+def removeFromList(section, frame, value):
+    section_list = fh.fileDictionary[section]["list"]
+    frame.destroy()
+    section_list.remove(value)
+    fh.fileDictionary[section]["combobox"].configure(values=section_list)
+    if section == "stations":
+        fh.fileDictionary[section]["combobox1"].configure(values=section_list)
+    fh.removeValueFromFile(fh.fileDictionary[section]["file"], value)
+
+def frameAdd(section, item):
+    main_frame = fh.fileDictionary[section]["mainframe"]
+    frame = ctk.CTkFrame(master=main_frame, fg_color="transparent")
+    frame.pack(side="top", fill="x", padx=5, pady=1)
+    frame.label = ctk.CTkLabel(frame, text=item, wraplength=160, anchor="w")
+    frame.label.pack(side="left", fill="x", padx=5, pady=1)
+    frame.removeButton = ctk.CTkButton(frame, command=lambda current_frame=frame, current_item=item: removeFromList(section, current_frame, current_item),text="", fg_color="transparent", image=trashIcon, width=25)
+    frame.removeButton.pack(side="right")
+
+def frameGenerate(section):
+    section_list = fh.fileDictionary[section]["list"]
+    for item in section_list:
+        frameAdd(section, item)
+
+stationsTopFrame = ctk.CTkFrame(master=settingsFrame, fg_color="transparent")
+stationsTopFrame.grid(row=0, column=0, padx= 5, sticky="nsew")
+ctk.CTkLabel(stationsTopFrame, text="Stations / Callsigns -", anchor="w").pack(side="left")
+addStationButton = ctk.CTkButton(stationsTopFrame, command=lambda: addToList("stations"), text="", fg_color="transparent", image=addIcon, width=25)
+addStationButton.pack(side="right")
+stationsFrame = ctk.CTkScrollableFrame(master=settingsFrame)
+fh.fileDictionary["stations"]["mainframe"] = stationsFrame
+stationsFrame.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
+frameGenerate("stations")
+
+netsTopFrame = ctk.CTkFrame(master=settingsFrame, fg_color="transparent")
+netsTopFrame.grid(row=0, column=1, padx= 5, sticky="nsew")
+ctk.CTkLabel(netsTopFrame, text="Nets / Transmission System -", anchor="w").pack(side="left")
+addNetButton = ctk.CTkButton(netsTopFrame, command=lambda: addToList("nets"), text="", fg_color="transparent", image=addIcon, width=25)
+addNetButton.pack(side="right")
+netsFrame = ctk.CTkScrollableFrame(master=settingsFrame)
+fh.fileDictionary["nets"]["mainframe"] = netsFrame
+netsFrame.grid(row=1, column=1, sticky="nsew", padx=5, pady=5)
+frameGenerate("nets")
+
+operatorsTopFrame = ctk.CTkFrame(master=settingsFrame, fg_color="transparent")
+operatorsTopFrame.grid(row=0, column=2, padx= 5, sticky="nsew")
+ctk.CTkLabel(operatorsTopFrame, text="Operators / Watchstander -", anchor="w").pack(side="left")
+addOperatorButton = ctk.CTkButton(operatorsTopFrame, command=lambda: addToList("operators"), text="", fg_color="transparent", image=addIcon, width=25)
+addOperatorButton.pack(side="right")
+operatorsFrame = ctk.CTkScrollableFrame(master=settingsFrame)
+fh.fileDictionary["operators"]["mainframe"] = operatorsFrame
+operatorsFrame.grid(row=1, column=2, sticky="nsew", padx=5, pady=5)
+frameGenerate("operators")
+
 # - About Frame
-aboutFrame = CTkFrame(master=UI)
+aboutFrame = ctk.CTkFrame(master=UI)
+ctk.CTkLabel(aboutFrame, text="Digital Transmissions Log").pack(side="top", fill="x")
+ctk.CTkLabel(aboutFrame, text="About This App").pack(side="top", fill="x", pady=(100,5))
+ctk.CTkLabel(aboutFrame, wraplength=700, text="This application was developed by a SOCS-C who has spent countless watches managing stacks of logbooks or battling clunky Excel sheets during high-tempo operations. It was built from the hard-earned experience of trying to maintain accurate, standardized reports amid shifting taskings, heavy comms traffic, and relentless time pressure. The system cuts through that chaos by providing standardized reporting formats and drastically reducing the time spent on manual logging—allowing watchstanders to stay focused on the fight and the mission at hand.").pack(side="top", fill="x")
+ctk.CTkLabel(aboutFrame, text="Version 2025.10.26").pack(side="bottom", fill="x")
 
 UI.mainloop()
